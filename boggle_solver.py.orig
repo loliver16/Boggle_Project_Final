@@ -1,0 +1,197 @@
+""" Name: Lauren Oliver, SID: 003100456 """
+
+class Boggle:
+
+    SPECIAL_TILES = {"QU": 2, "ST": 2, "IE": 2}
+
+    def __init__(self, grid, dictionary):
+        """
+        Constructor for Boggle class.
+        
+        Parameters:
+        grid (list[list[str]]): 2D array representing the Boggle board.
+        dictionary (list[str]): List of valid words.
+        
+        Initializes:
+        self.solutions (set): Stores unique words found during search.
+        """
+        self.grid = grid
+        self.dictionary = dictionary
+        self.solutions = set()   # store unique words found
+
+        if not self._grid_is_valid(self.grid):
+          self.invalid_grid = True
+        else:
+          self.invalid_grid = False
+
+
+    def setGrid(self, grid):
+        """
+        Setter method to update the game grid.
+
+        Parameters:
+        grid (2D array of strings): New NxN board of letters
+        """
+        self.grid = grid
+        self.solutions = set()  # reset solutions when grid changes
+
+    def setDictionary(self, dictionary):
+        """
+        Setter method to update the dictionary.
+
+        Parameters:
+        dictionary (list of strings): New list of valid words
+        """
+        self.dictionary = dictionary
+        self.solutions = set()  # reset solutions when dictionary changes
+
+    def getSolution(self):
+        """
+        Main solver method to find all valid words in the grid.
+        
+        Returns:
+        list[str]: Sorted list of unique words found on the board.
+        """
+        # Ensure inputs exist
+        if not self.grid or self.dictionary is None:
+            return []
+
+        size = len(self.grid)
+
+        # Handle empty grid case
+        if size == 0:
+            return []
+
+        # Grid must be square (NxN)
+        if any(len(row) != size for row in self.grid):
+            return []
+
+        # Normalize everything to lowercase
+        self.grid, self.dictionary = self._normalize_input(self.grid, self.dictionary)
+
+        # Validate grid (all alphabetic tiles)
+        if not self._grid_is_valid(self.grid):
+            return []
+
+        # Build prefix set + dictionary set for fast lookup
+        prefix_set, word_set = self._make_prefix_lookup(self.dictionary)
+
+        visited = [[False] * size for _ in range(size)]
+
+        # Explore from each grid position
+        for r in range(size):
+            for c in range(size):
+                self._search("", r, c, visited, prefix_set, word_set, length=0)
+
+        # return sorted(self.solutions)
+        return sorted(word.upper() for word in self.solutions)
+
+    def _normalize_input(self, grid, dictionary):
+        """
+        Convert grid letters and dictionary words to uppercase.
+        
+        Parameters:
+        grid (list[list[str]]): Original grid.
+        dictionary (list[str]): Original dictionary.
+        
+        Returns:
+        tuple: (upper_grid, upper_dict)
+        """
+        upper_grid = [[cell.upper() for cell in row] for row in grid]
+        upper_dict = [word.upper() for word in dictionary]
+        return upper_grid, upper_dict
+
+    def _grid_is_valid(self, grid):
+        """
+        Check that the grid contains only alphabetic strings.
+        
+        Parameters:
+        grid (list[list[str]]): 2D Boggle board to validate.
+        
+        Returns:
+        bool: True if all cells are strings and alphabetic, False otherwise.
+        """
+        for row in grid:
+            for cell in row:
+                if not isinstance(cell, str) or not cell.isalpha():
+                    return False
+                if cell.upper() == "Q":
+                  return False
+                if cell.upper() == "S":
+                  return False
+                if cell.upper() == "I":
+                  return False
+        return True
+
+    def _make_prefix_lookup(self, dictionary):
+        """
+        Build prefix set and word set from the dictionary for DFS pruning.
+        
+        Parameters:
+        dictionary (list[str]): List of valid words.
+        
+        Returns:
+        tuple: (prefix_set, word_set)
+            prefix_set (set[str]): All possible prefixes of dictionary words.
+            word_set (set[str]): Full words from the dictionary.
+        """
+        prefix_set = set()
+        word_set = set(dictionary)
+        for word in dictionary:
+            for i in range(1, len(word) + 1):
+                prefix_set.add(word[:i])
+        return prefix_set, word_set
+
+
+    def _search(self, current, row, col, visited, prefix_set, word_set, length):
+        """
+        Perform depth-first search (DFS) from a given cell to find words.
+        
+        Parameters:
+        current (str): Current accumulated word along DFS path.
+        row (int): Row index of the current cell.
+        col (int): Column index of the current cell.
+        visited (list[list[bool]]): Tracks cells already used in current path.
+        prefix_set (set[str]): Set of valid prefixes for pruning DFS.
+        word_set (set[str]): Set of valid words.
+        length (int): Accumulated word length accounting for special tiles.
+
+        """
+        n = len(self.grid)
+        if row < 0 or row >= n or col < 0 or col >= n or visited[row][col]:
+            return
+
+        tile = self.grid[row][col]
+        new_word = current + tile
+
+        tile = self.grid[row][col].upper()  # normalize tile
+        new_word = current + tile
+        new_length = length + self.SPECIAL_TILES.get(tile, 1)
+
+        if new_word not in prefix_set:
+            return
+
+        visited[row][col] = True
+
+        if new_word in word_set and new_length >= 3:
+            self.solutions.add(new_word.upper())
+
+        # Explore neighbors
+        for dr in (-1, 0, 1):
+            for dc in (-1, 0, 1):
+                if dr == 0 and dc == 0:
+                    continue
+                self._search(new_word, row + dr, col + dc, visited, prefix_set, word_set, new_length)
+
+        visited[row][col] = False  # backtrack
+
+
+def main():
+    grid = [["T", "W", "Y", "R"], ["E", "N", "P", "H"],["G", "Z", "Qu", "R"],["O", "N", "T", "A"]]
+    dictionary = ["art", "ego", "gent", "get", "net", "new", "newt", "prat", "pry", "qua", "quart", "quartz", "rat", "tar", "tarp", "ten", "went", "wet", "arty", "rhr", "not", "quar"]
+    
+    game = Boggle(grid, dictionary)
+    print(game.getSolution())
+
+if __name__ == "__main__":
+    main()
