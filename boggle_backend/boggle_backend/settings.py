@@ -132,3 +132,11 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+
+# Firebase configuration
+# Path to Firebase service account key JSON file
+# You can either:
+# 1. Place firebase-service-account.json in the boggle_backend directory
+# 2. Set FIREBASE_SERVICE_ACCOUNT_KEY to the absolute path of your service account key
+# 3. Use Application Default Credentials (for production/GCP environments)
+FIREBASE_SERVICE_ACCOUNT_KEY = '/Users/lauren/Desktop/Howard/software_engineering/starter-assignment-3-code/boggle_backend/firebase-service-account.json'  # Set to path if not using default location

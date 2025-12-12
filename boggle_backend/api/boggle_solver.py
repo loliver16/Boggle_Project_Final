@@ -134,11 +134,9 @@ class Boggle:
             for cell in row:
                 if not isinstance(cell, str) or not cell.isalpha():
                     return False
-                if cell.upper() == "Q":
-                    return False
-                if cell.upper() == "S":
-                    return False
-                if cell.upper() == "I":
+                # Single Q, S, or I are not allowed - must be QU, ST, or IE special tiles
+                cell_upper = cell.upper()
+                if cell_upper == "Q" or cell_upper == "S" or cell_upper == "I":
                     return False
         return True
 

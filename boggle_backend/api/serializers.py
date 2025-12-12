@@ -40,3 +40,6 @@ class GamesSerializer(serializers.ModelSerializer):
             data['foundwords'] = json.dumps(data['foundwords'])
         
         return super().to_internal_value(data)
+
+# Note: Challenge and LeaderboardEntry serializers removed
+# Challenges are now handled via Firestore in firestore_service.py

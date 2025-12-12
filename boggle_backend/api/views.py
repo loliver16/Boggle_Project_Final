@@ -6,6 +6,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Games
 from .serializers import GamesSerializer
+from .firestore_service import (
+    get_all_challenges,
+    get_challenge_by_id,
+    format_challenge_for_api
+)
 from .randomGen import random_grid
 from .readJSONFile import read_json_to_list
 from .boggle_solver import Boggle
@@ -82,5 +87,60 @@ def create_game(request, size):
     except Exception as e:
         return Response(
             {"error": str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+# Challenge endpoints - using Firestore
+@api_view(['GET'])
+def get_active_challenges(request):
+    """Get all active challenges with their high scores from Firestore"""
+    try:
+        challenges = get_all_challenges()
+        # Format each challenge for API response
+        formatted_challenges = []
+        for challenge in challenges:
+            try:
+                formatted = format_challenge_for_api(challenge)
+                formatted_challenges.append(formatted)
+            except Exception as e:
+                print(f"Error formatting challenge {challenge.get('id', 'unknown')}: {str(e)}")
+                continue
+        
+        return Response(formatted_challenges)
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error in get_active_challenges: {str(e)}")
+        print(error_details)
+        return Response(
+            {"error": str(e), "detail": "Failed to retrieve challenges from Firestore.", "traceback": error_details}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['GET'])
+def get_challenge(request, challenge_id):
+    """Get a specific challenge by ID from Firestore"""
+    try:
+        challenge = get_challenge_by_id(challenge_id)
+        
+        if not challenge:
+            return Response(
+                {"error": "Challenge not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Format challenge for API response
+        formatted_challenge = format_challenge_for_api(challenge)
+        return Response(formatted_challenge)
+        
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error in get_challenge: {str(e)}")
+        print(error_details)
+        return Response(
+            {"error": str(e), "detail": "Failed to retrieve challenge from Firestore."}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
